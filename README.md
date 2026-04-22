@@ -47,6 +47,7 @@ Step	Process	Tool	Description
 
 ### Output directory structure
 
+'''
 results/
 ├── fastqc_raw/              # FastQC reports for raw reads
 │   ├── ERR16112907_1_fastqc.html
@@ -63,4 +64,4 @@ results/
 └── coverage/                # Coverage analysis
     ├── ERR16112907_depth.txt
     └── ERR16112907_coverage.png
-
+'''
