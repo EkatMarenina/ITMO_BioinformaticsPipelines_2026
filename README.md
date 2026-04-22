@@ -47,21 +47,21 @@ Step	Process	Tool	Description
 
 ### Output directory structure
 
-'''
+```text
 results/
-├── fastqc_raw/              # FastQC reports for raw reads
+├── fastqc_raw/ # FastQC reports for raw reads
 │   ├── ERR16112907_1_fastqc.html
 │   └── ERR16112907_2_fastqc.html
-├── fastqc_trimmed/          # FastQC reports for trimmed reads
+├── fastqc_trimmed/ # FastQC reports for trimmed reads
 │   ├── ERR16112907_1_fastqc.html
 │   └── ERR16112907_2_fastqc.htm
-├── trimmed/                 # Trimmed FASTQ files
+├── trimmed/ # Trimmed FASTQ files
 │   ├── ERR16112907_1.fq.gz
 │   └── ERR16112907_2.fq.gz
-├── mapping/                 # Alignment files
+├── mapping/ # Alignment files
 │   ├── ERR16112907.bam
 │   └── ERR16112907.bam.bai
-└── coverage/                # Coverage analysis
+└── coverage/ # Coverage analysis
     ├── ERR16112907_depth.txt
     └── ERR16112907_coverage.png
-'''
+```
