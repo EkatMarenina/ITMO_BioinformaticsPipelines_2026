@@ -1,0 +1,14 @@
+name: hw3-pipeline
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - fastqc=0.12.1
+  - fastp=0.23.4
+  - bwa=0.7.17
+  - samtools=1.19
+  - bcftools=1.19
+  - tabix
+  - r-base=4.3
+  - r-ggplot2
