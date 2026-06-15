@@ -1,4 +1,4 @@
-# Bioinformatics Pipeline - HW2
+# Bioinformatics Pipelines - HW2
 
 Nextflow pipeline for processing paired-end NGS data with QC, trimming, mapping, and coverage visualization by me.
 
