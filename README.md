@@ -15,14 +15,14 @@ This pipeline processes paired-end NGS data from SRA, performs quality control, 
 - Three execution profiles: `local`, `cluster`, `container`
 
 ## Repository Structure
-
+```bash
 ITMO_BioinformaticsPipelines_2026/
 ├── main.nf # Main Nextflow pipeline
 ├── nextflow.config # Configuration with 3 profiles
 ├── environment.yml # Conda dependencies
 ├── Dockerfile # Docker image for container profile
 └── README.md # This file
-
+```
 ## System Requirements
 
 - **Nextflow** (>= 22.10.0)
@@ -86,6 +86,7 @@ nextflow run main.nf -profile container \
 ```
 
 ## Output Structure
+```bash
 After successful execution, the results/ directory will contain:
 results/
 ├── fastqc_raw/          # FastQC reports for raw reads
@@ -96,3 +97,4 @@ results/
 └── variants/            # VCF files with variants
     ├── ERR16112907.vcf.gz   # Compressed VCF
     └── ERR16112907.vcf.gz.tbi # VCF index
+```
