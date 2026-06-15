@@ -1,0 +1,20 @@
+# Nextflow temporary files
+work/
+.nextflow/
+.nextflow.log*
+trace.txt
+timeline.html
+report.html
+
+# Conda environments (usually large)
+envs/
+*.tar.bz2
+
+# OS junk files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
