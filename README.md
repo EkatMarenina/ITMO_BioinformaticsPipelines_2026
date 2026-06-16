@@ -19,6 +19,7 @@ Docker version 29.3.1, build c2be9cc
 ```
 **conda**
 ```
+$conda --version
 conda 26.1.1
 ```
 **2.Install pipeline rnaseq-nf**
