@@ -1,4 +1,4 @@
-name: hw3-pipeline
+name: hw4-pipeline
 channels:
   - conda-forge
   - bioconda
@@ -10,5 +10,6 @@ dependencies:
   - samtools=1.19
   - bcftools=1.19
   - tabix
+  - htslib=1.19
   - r-base=4.3
   - r-ggplot2
