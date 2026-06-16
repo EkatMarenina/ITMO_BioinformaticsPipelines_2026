@@ -19,8 +19,7 @@ Docker version 29.3.1, build c2be9cc
 ```
 **conda**
 ```
-
-
+conda 26.1.1
 ```
 **2.Install pipeline rnaseq-nf**
 ```
@@ -139,7 +138,7 @@ $sudo nextflow run . \
   --reads '/media/genomed/DATA_15Tb/emarenina/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/SRR39139867/SRR39139867_{1,2}.fastq.gz' \
   -resume
 
-
+**in process**
 ```
 
 
