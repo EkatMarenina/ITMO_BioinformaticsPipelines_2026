@@ -136,10 +136,39 @@ $gzip *.fastq
 ```
 $sudo nextflow run . \
   -profile docker \
-  --reads '/media/genomed/DATA_15Tb/emarenina/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/SRR39139867/SRR39139867_{1,2}.fastq.gz' \
+  --reads '/media/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/SRR39139867/SRR39139867_{1,2}.fastq.gz' \
   -resume
 
-**in process**
+ N E X T F L O W   ~  version 26.04.3
+
+Launching `./main.nf` [trusting_kirch] revision: 313571027f
+
+  R N A S E Q - N F   P I P E L I N E
+  ===================================
+  transcriptome: /media/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/data/ggal/ggal_1_48850000_49020000.Ggal71.500bpflank.fa
+  reads        : /media/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/SRR39139867/SRR39139867_{1,2}.fastq.gz
+  outdir       : /media/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/results
+
+executor >  local (3)
+[43/e724b9] RNA…Q:INDEX (ggal_1_48850000_49020000) | 1 of 1, cached: 1 ✔
+[ba/e962d3] RNASEQ:FASTQC (SRR39139867)            | 1 of 1 ✔
+[09/28a2a6] RNASEQ:QUANT (SRR39139867)             | 1 of 1 ✔
+[7f/34e543] MULTIQC                                | 1 of 1 ✔
+
+Outputs:
+
+  /media/genomed/DATA_15Tb/emarenina/ITMO_BioinformaticsPipelines_2026/rnaseq-nf/results
+
+  samples: samples.csv
+
+  multiqc_report: multiqc_report.html
+
+Completed at: 16-Jun-2026 12:53:13
+Duration    : 5m 43s
+CPU hours   : 0.2 (0.2% cached)
+Succeeded   : 3
+Cached      : 1
 ```
+**DONE - ✔**
 
 
