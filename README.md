@@ -1,100 +1,146 @@
-# HW3: Nextflow Pipeline for NGS Processing with Variant Calling
+# HW4: Multi-sample Nextflow pipeline with variant filtering
 
-## Description
-
-This pipeline processes paired-end NGS data from SRA, performs quality control, trimming, alignment to a reference genome, coverage plotting, and **variant calling** using `bcftools`.
+This homework continues the HW3 pipeline and adds support for multi-sample input from a CSV samplesheet, variant filtering, and stub-based development.  
+The pipeline was updated to work with **single-end (SE)** input, and the coverage plotting step was improved to handle empty coverage files safely.
 
 ## Features
 
-- SRA data download by accession number
-- Quality control of raw and trimmed reads (`FastQC`)
-- Adapter trimming and filtering (`fastp`)
-- Read alignment to reference genome (`bwa mem` + `samtools`)
-- Coverage plot generation (R + `ggplot2`)
-- **Variant calling** (`bcftools mpileup + call`)
-- Three execution profiles: `local`, `cluster`, `container`
+- Multi-sample input from `samplesheet.csv`.
+- Sample metadata support via `sample` and `group` fields.
+- Single-end read processing.
+- Raw and trimmed read QC with FastQC.
+- Read trimming with fastp.
+- Mapping with bwa + samtools.
+- Coverage plotting with a safer `PLOT_COVERAGE` process.
+- Variant calling with bcftools.
+- Variant filtering with bcftools view.
+- `stub` mode support for fast workflow prototyping.
 
-## Repository Structure
-```bash
-ITMO_BioinformaticsPipelines_2026/
-├── main.nf # Main Nextflow pipeline
-├── nextflow.config # Configuration with 3 profiles
-├── environment.yml # Conda dependencies
-├── Dockerfile # Docker image for container profile
-└── README.md # This file
-```
-## System Requirements
+## Input format
 
-- **Nextflow** (>= 22.10.0)
-- **Conda** or **Mamba** (for local/cluster profiles)
-- **Docker** (optional, for container profile)
-- **Java** (>= 11)
+The pipeline expects a CSV samplesheet with the following columns:
 
-## Quick Start
-**1. Clone the repository**
-```bash
-git clone https://github.com/EkatMarenina/ITMO_BioinformaticsPipelines_2026.git
-cd ITMO_BioinformaticsPipelines_2026
-git checkout HW3
+```csv
+sample,group,path
+s1,sars-cov,/path/to/SRR39133135.fastq.gz
+s2,PCR-human,/path/to/SRR1175163.fastq.gz
 ```
 
-**2. Create Conda environment**
+### Column description
 ```bash
-# Create environment from environment.yml
-conda env create -f environment.yml -n hw3-pipeline
-
-# Activate environment
-conda activate hw3-pipeline
+- `sample` — sample identifier.
+- `group` — group name used for sample metadata.
+- `path` — path to the single-end FASTQ file.
 ```
-
-**3. Download reference genome (E. coli)**
+## Requirements
 ```bash
-mkdir -p data/ref
-cd data/ref
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz
-gunzip GCF_000005845.2_ASM584v2_genomic.fna.gz
-mv GCF_000005845.2_ASM584v2_genomic.fna ecoli.fa
-cd ../..
+- Nextflow
+- Conda
+- fastqc
+- fastp
+- bwa
+- samtools
+- bcftools
+- tabix
+- htslib
+- R
+- r-ggplot2
 ```
+## What was updated in HW4
 
-**4. Run the pipeline**
-**local profile (local execution with Conda)**
+Compared to HW3, I updated:
+
+- the configuration file;
+- the conda environment file;
+- the pipeline to support **single-end** input;
+- the coverage plotting step to avoid crashing on empty depth files.
+
+## Run
+
+### Local
+
 ```bash
-nextflow run main.nf -profile local \
-  --conda_env hw3-pipeline \
+nextflow run main.nf \
+  -profile local \
+  --samplesheet samplesheet.csv \
   --reference data/ref/ecoli.fa \
-  --accession ERR16112907 \
-  --outdir results
-```
-**cluster profile (SLURM cluster execution)**
-```bash
-nextflow run main.nf -profile cluster \
-  --reference data/ref/ecoli.fa \
-  --accession ERR16112907 \
-  --outdir results
-```
-**container profile (Docker execution)**
-```bash
-# Build Docker image (once)
-docker build -t ekatmarenina/hw3-pipeline:latest .
-
-# Run pipeline
-nextflow run main.nf -profile container \
-  --reference data/ref/ecoli.fa \
-  --accession ERR16112907 \
   --outdir results
 ```
 
-## Output Structure
+If you use a local conda environment path:
+
 ```bash
-After successful execution, the results/ directory will contain:
-results/
-├── fastqc_raw/          # FastQC reports for raw reads
-├── trimmed/             # Trimmed reads (fastp output)
-├── fastqc_trimmed/      # FastQC reports for trimmed reads
-├── mapping/             # BAM files and indices
-├── coverage/            # Coverage depth files and plots
-└── variants/            # VCF files with variants
-    ├── ERR16112907.vcf.gz   # Compressed VCF
-    └── ERR16112907.vcf.gz.tbi # VCF index
+nextflow run main.nf \
+  -profile local \
+  --samplesheet samplesheet.csv \
+  --reference data/ref/ecoli.fa \
+  --outdir results \
+  --conda_env /path/to/your/hw4-env
 ```
+
+### Cluster
+
+```bash
+nextflow run main.nf \
+  -profile cluster \
+  --samplesheet samplesheet.csv \
+  --reference data/ref/ecoli.fa \
+  --outdir results
+```
+
+### Container
+
+```bash
+nextflow run main.nf \
+  -profile container \
+  --samplesheet samplesheet.csv \
+  --reference data/ref/ecoli.fa \
+  --outdir results
+```
+
+## Stub run
+
+For fast development and testing, the pipeline supports stub mode:
+
+```bash
+nextflow run main.nf \
+  -profile local \
+  --samplesheet samplesheet.csv \
+  --reference data/ref/ecoli.fa \
+  --outdir results_stub \
+  -stub-run
+```
+
+## Output
+
+The pipeline creates the following output directories:
+
+- `fastqc_raw/`
+- `trimmed/`
+- `fastqc_trimmed/`
+- `mapping/`
+- `coverage/`
+- `variants/`
+- `filtered_variants/`
+
+## Notes
+
+- The pipeline is designed for single-end FASTQ input.
+- Coverage plotting was improved so that samples with empty or missing coverage do not break the workflow.
+- The final variant filtering step uses a simple QUAL threshold.
+
+## Example filtering logic
+
+The filtering step keeps variants with:
+
+- `QUAL >= 20`
+
+This threshold can be adjusted in `nextflow.config` or by parameter if needed.
+
+## Files
+
+- `main.nf` — main workflow script.
+- `nextflow.config` — configuration with local, cluster and container profiles.
+- `environment.yml` — conda environment for the pipeline.
+- `Dockerfile` — container image definition.
+- `samplesheet.csv` — example input table.
