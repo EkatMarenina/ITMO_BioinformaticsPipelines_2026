@@ -9,6 +9,9 @@ params.conda_env   = params.conda_env ?: null
 params.container   = params.container ?: "yourdockerhubuser/hw3-pipeline:latest"
 params.qual_cutoff = params.qual_cutoff ?: 20
 
+include { TRIM_READS as TRIM_READS_SARS  } from './modules/local/trim_reads'
+include { TRIM_READS as TRIM_READS_HUMAN } from './modules/local/trim_reads'
+
 process FASTQC_RAW {
     tag "${meta.id}"
     publishDir "${params.outdir}/fastqc_raw", mode: 'copy'
@@ -26,26 +29,6 @@ process FASTQC_RAW {
     stub:
     """
     touch ${meta.id}_fastqc.html
-    """
-}
-
-process TRIM_READS {
-    tag "${meta.id}"
-    publishDir "${params.outdir}/trimmed", mode: 'copy'
-
-    input:
-    tuple val(meta), path(reads)
-
-    output:
-    tuple val(meta), path("${meta.id}.trimmed.fastq.gz")
-
-    script:
-    """
-    fastp -i ${reads} -o ${meta.id}.trimmed.fastq.gz
-    """
-    stub:
-    """
-    touch ${meta.id}.trimmed.fastq.gz
     """
 }
 
@@ -224,21 +207,41 @@ workflow {
         .map { row ->
             tuple(
                 [id: row.sample, group: row.group],
-                file(row.path, checkIfExists: true)
+                file(row.path)
             )
         }
 
     FASTQC_RAW(raw_reads_ch)
-    trimmed_ch = TRIM_READS(raw_reads_ch)
+
+    grouped_ch = raw_reads_ch.branch {
+        sars:  it[0].group == "sars-cov"
+        human: it[0].group == "PCR-human"
+    }
+
+    trimmed_sars_ch  = TRIM_READS_SARS(
+        grouped_ch.sars.map { meta, reads -> [ meta + [qual: 30], reads ] }
+    )
+    trimmed_human_ch = TRIM_READS_HUMAN(
+        grouped_ch.human.map { meta, reads -> [ meta + [qual: 20], reads ] }
+    )
+
+    trimmed_ch = trimmed_sars_ch.mix(trimmed_human_ch)
+
     FASTQC_TRIMMED(trimmed_ch)
 
     ref_file = file(params.reference, checkIfExists: true)
 
-    mapped_ch = MAP_READS(trimmed_ch.map { meta, reads -> tuple(meta, reads, ref_file) })
+    mapped_ch = MAP_READS(
+        trimmed_ch.map { meta, reads -> tuple(meta, reads, ref_file) }
+    )
+
     PLOT_COVERAGE(mapped_ch)
 
-    variants_ch = VARIANT_CALLING(mapped_ch.map { meta, bam, bai -> tuple(meta, bam, bai, ref_file) })
+    variants_ch = VARIANT_CALLING(
+        mapped_ch.map { meta, bam, bai -> tuple(meta, bam, bai, ref_file) }
+    )
+
     FILTER_VARIANTS(variants_ch)
-    
+
     log.info "Pipeline complete"
 }
