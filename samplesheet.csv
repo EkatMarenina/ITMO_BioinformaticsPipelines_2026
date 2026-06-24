@@ -1,0 +1,3 @@
+sample,group,path
+s1,sars-cov,/media/genomed/DATA_15Tb/emarenina/ITMO_BioinformaticsPipelines_2026/reads/SRR39133135.fastq.gz
+s2,PCR-human,/media/genomed/DATA_15Tb/emarenina/ITMO_BioinformaticsPipelines_2026/reads/SRR1175163.fastq.gz
