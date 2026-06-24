@@ -1,36 +1,46 @@
 # HW3: Nextflow Pipeline for NGS Processing with Variant Calling
 
 ## Description
-
-This pipeline processes paired-end NGS data from SRA, performs quality control, trimming, alignment to a reference genome, coverage plotting, and **variant calling** using `bcftools`.
+This pipeline processes paired-end NGS data from SRA, performs quality control,
+trimming, alignment to a reference genome, coverage plotting, variant calling,
+and variant filtering using `bcftools`.
 
 ## Features
-
 - SRA data download by accession number
-- Quality control of raw and trimmed reads (`FastQC`)
+- Quality control of raw and trimmed reads (`FastQC`) — single reusable process
+  imported with two aliases (`FASTQC_RAW` / `FASTQC_TRIMMED`) to avoid code duplication
 - Adapter trimming and filtering (`fastp`)
 - Read alignment to reference genome (`bwa mem` + `samtools`)
-- Coverage plot generation (R + `ggplot2`)
-- **Variant calling** (`bcftools mpileup + call`)
+- Coverage plot generation (R)
+- Variant calling (`bcftools mpileup + call`)
+- Variant filtering via nf-core module (`bcftools/filter`, QUAL>=20 && DP>=10)
 - Three execution profiles: `local`, `cluster`, `container`
 
 ## Repository Structure
 ```bash
 ITMO_BioinformaticsPipelines_2026/
-├── main.nf # Main Nextflow pipeline
-├── nextflow.config # Configuration with 3 profiles
-├── environment.yml # Conda dependencies
-├── Dockerfile # Docker image for container profile
-└── README.md # This file
+├── main.nf                          # Main Nextflow pipeline
+├── nextflow.config                  # Configuration with 3 profiles
+├── environment.yml                  # Conda dependencies
+├── Dockerfile                       # Docker image for container profile
+├── modules/
+│   ├── local/
+│   │   └── fastqc.nf               # Reusable FASTQC module (used with aliases)
+│   └── nf-core/
+│       └── bcftools/
+│           └── filter/
+│               └── main.nf         # nf-core BCFTOOLS_FILTER module
+└── README.md                        # This file
 ```
-## System Requirements
 
-- **Nextflow** (>= 22.10.0)
+## System Requirements
+- **Nextflow** (>= 24.10.0)
 - **Conda** or **Mamba** (for local/cluster profiles)
 - **Docker** (optional, for container profile)
 - **Java** (>= 11)
 
 ## Quick Start
+
 **1. Clone the repository**
 ```bash
 git clone https://github.com/EkatMarenina/ITMO_BioinformaticsPipelines_2026.git
@@ -40,10 +50,7 @@ git checkout HW3
 
 **2. Create Conda environment**
 ```bash
-# Create environment from environment.yml
 conda env create -f environment.yml -n hw3-pipeline
-
-# Activate environment
 conda activate hw3-pipeline
 ```
 
@@ -58,7 +65,8 @@ cd ../..
 ```
 
 **4. Run the pipeline**
-**local profile (local execution with Conda)**
+
+Local profile (Conda):
 ```bash
 nextflow run main.nf -profile local \
   --conda_env hw3-pipeline \
@@ -66,19 +74,18 @@ nextflow run main.nf -profile local \
   --accession ERR16112907 \
   --outdir results
 ```
-**cluster profile (SLURM cluster execution)**
+
+Cluster profile (SLURM):
 ```bash
 nextflow run main.nf -profile cluster \
   --reference data/ref/ecoli.fa \
   --accession ERR16112907 \
   --outdir results
 ```
-**container profile (Docker execution)**
-```bash
-# Build Docker image (once)
-docker build -t ekatmarenina/hw3-pipeline:latest .
 
-# Run pipeline
+Container profile (Docker):
+```bash
+docker build -t ekatmarenina/hw3-pipeline:latest .
 nextflow run main.nf -profile container \
   --reference data/ref/ecoli.fa \
   --accession ERR16112907 \
@@ -87,14 +94,15 @@ nextflow run main.nf -profile container \
 
 ## Output Structure
 ```bash
-After successful execution, the results/ directory will contain:
 results/
-├── fastqc_raw/          # FastQC reports for raw reads
-├── trimmed/             # Trimmed reads (fastp output)
-├── fastqc_trimmed/      # FastQC reports for trimmed reads
-├── mapping/             # BAM files and indices
-├── coverage/            # Coverage depth files and plots
-└── variants/            # VCF files with variants
-    ├── ERR16112907.vcf.gz   # Compressed VCF
-    └── ERR16112907.vcf.gz.tbi # VCF index
+├── fastqc/                          # FastQC reports (raw_ and trimmed_ prefixed)
+├── trimmed/                         # Trimmed reads (fastp output)
+├── mapping/                         # BAM files and indices
+├── coverage/                        # Coverage depth files and plots
+├── variants/                        # Raw VCF files
+│   ├── ERR16112907.vcf.gz
+│   └── ERR16112907.vcf.gz.tbi
+└── filtered_variants/               # Filtered VCF files (QUAL>=20 && DP>=10)
+    ├── ERR16112907_filtered.vcf.gz
+    └── ERR16112907_filtered.vcf.gz.tbi
 ```
