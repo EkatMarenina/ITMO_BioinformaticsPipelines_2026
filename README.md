@@ -1,4 +1,3 @@
-```markdown
 # HW4: Multi-sample Nextflow Pipeline with Sample Grouping and Variant Filtering
 
 ## Description
