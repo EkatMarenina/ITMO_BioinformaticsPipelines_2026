@@ -1,5 +1,4 @@
 #!/usr/bin/env nextflow
-
 nextflow.enable.dsl = 2
 
 params.accession = "ERR16112907"
@@ -8,12 +7,16 @@ params.outdir    = "results"
 params.conda_env = null
 params.container = "yourdockerhubuser/hw3-pipeline:latest"
 
-process FASTQC_RAW {
-    tag "${id}"
-    publishDir "${params.outdir}/fastqc_raw", mode: 'copy'
+include { BCFTOOLS_FILTER } from './modules/nf-core/bcftools/filter/main'
+
+// Единый процесс FASTQC вместо двух одинаковых
+process FASTQC {
+    tag "${id}_${stage}"
+    publishDir "${params.outdir}/fastqc_${stage}", mode: 'copy'
 
     input:
     tuple val(id), path(r1), path(r2)
+    val stage
 
     output:
     path "*.html"
@@ -37,22 +40,6 @@ process TRIM_READS {
     script:
     """
     fastp -i ${r1} -I ${r2} -o ${id}_1.fq.gz -O ${id}_2.fq.gz
-    """
-}
-
-process FASTQC_TRIMMED {
-    tag "${id}"
-    publishDir "${params.outdir}/fastqc_trimmed", mode: 'copy'
-
-    input:
-    tuple val(id), path(r1), path(r2)
-
-    output:
-    path "*.html"
-
-    script:
-    """
-    fastqc ${r1} ${r2} --noextract
     """
 }
 
@@ -88,16 +75,13 @@ process PLOT_COVERAGE {
     script:
     """
     samtools depth ${bam} > ${id}_depth.txt
-
     cat <<'EOF' > plot_coverage.R
 #!/usr/bin/env Rscript
 args <- commandArgs(trailingOnly = TRUE)
 sample_id <- args[1]
 depth_file <- paste0(sample_id, "_depth.txt")
 output_png <- paste0(sample_id, "_coverage.png")
-
 data <- read.table(depth_file, header=FALSE, col.names=c("contig", "pos", "cov"))
-
 png(output_png, width=14, height=6, units="in", res=150)
 plot(data[["pos"]], data[["cov"]], type="l", col="blue", lwd=0.5,
      xlab="Genome Position (bp)", ylab="Coverage Depth",
@@ -109,7 +93,6 @@ legend("topright", legend=c(paste("Mean coverage:", round(avg_cov, 1), "x")),
 grid(col="gray", lty=3)
 dev.off()
 EOF
-
     chmod +x plot_coverage.R
     Rscript plot_coverage.R ${id}
     """
@@ -133,18 +116,26 @@ process VARIANT_CALLING {
 }
 
 workflow {
-    sra_ch = Channel.fromSRA(params.accession)
+    sra_ch   = Channel.fromSRA(params.accession)
     reads_ch = sra_ch.map { entry -> [entry[0], entry[1][0], entry[1][1]] }
 
-    FASTQC_RAW(reads_ch)
+    FASTQC(reads_ch, "raw")                          // ← один процесс, стадия "raw"
+
     trimmed_ch = TRIM_READS(reads_ch)
-    FASTQC_TRIMMED(trimmed_ch)
+
+    FASTQC(trimmed_ch, "trimmed")                    // ← тот же процесс, стадия "trimmed"
 
     ref_file = file(params.reference, checkIfExists: true)
 
     mapped_ch = MAP_READS(trimmed_ch.map { id, r1, r2 -> tuple(id, r1, r2, ref_file) })
+
     PLOT_COVERAGE(mapped_ch)
-    VARIANT_CALLING(mapped_ch.map { id, bam, bai -> tuple(id, bam, bai, ref_file) })
+
+    variants_ch = VARIANT_CALLING(mapped_ch.map { id, bam, bai -> tuple(id, bam, bai, ref_file) })
+
+    // FILTER_VARIANTS из nf-core вместо самописного процесса
+    filtered_input_ch = variants_ch.map { id, vcf, tbi -> [ [id: id], vcf, tbi ] }
+    BCFTOOLS_FILTER(filtered_input_ch)
 
     log.info "Pipeline complete"
 }
